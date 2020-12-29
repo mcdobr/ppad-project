@@ -1,75 +1,114 @@
 package me.mircea;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import me.mircea.SpanningTreeMessage.SpanningTreeMessageType;
+
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+@ToString
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Node implements Runnable {
-    private static final int PACKAGE_SIZE = 65_536;
 
+    @EqualsAndHashCode.Include
     private final int id;
     private final DatagramSocket socket;
-    private final Set<Node> neighbors;
+    private final Map<Node, Integer> neighbors;
+    private final Set<UUID> seenUuids;
+    private final SpanningTreeMessageReader reader;
+    private final SpanningTreeMessageWriter writer;
 
     public Node(int id, int port) throws SocketException {
         this.id = id;
         this.socket = new DatagramSocket(port);
-        this.neighbors = new HashSet<>();
+        this.neighbors = new HashMap<>();
+        this.seenUuids = new HashSet<>();
+        this.reader = new SpanningTreeMessageReader(this.socket);
+        this.writer = new SpanningTreeMessageWriter(this.socket);
     }
 
     public int getId() {
         return this.id;
     }
 
-    public boolean addNeighbor(Node other) {
-        return neighbors.add(other);
+    public int getPort() {
+        return socket.getPort();
+    }
+
+    public void addNeighbor(Node other, int latency) {
+        neighbors.put(other, latency);
     }
 
     @Override
     public void run() {
         try {
             while (true) {
-                try {
-                    DatagramPacket requestPacket = readRequest();
-                    tryToWriteResponse(requestPacket);
-                } catch (IOException e) {
-                    System.err.println("Could not read request...");
-                    e.printStackTrace();
-                }
-
+                buildSpanningTree();
             }
         } finally {
             socket.close();
         }
     }
 
-    private DatagramPacket readRequest() throws IOException {
-        byte[] requestBuffer = new byte[PACKAGE_SIZE];
-        DatagramPacket requestPacket = new DatagramPacket(requestBuffer, requestBuffer.length);
-        socket.receive(requestPacket);
-        return requestPacket;
-    }
+    private void buildSpanningTree() {
+        seenUuids.clear();
+        SpanningTreeMessage possibleStartMessage = reader.readMessage();
+        if (possibleStartMessage.getType() == SpanningTreeMessageType.BUILD) {
+            seenUuids.add(possibleStartMessage.getMessageUuid());
+            int parentId = possibleStartMessage.getSourceId();
 
-    private void tryToWriteResponse(DatagramPacket requestPacket) {
-        try {
-            writeResponse(requestPacket);
-        } catch (IOException e) {
-            System.err.println("Could not write");
-            e.printStackTrace();
+            Map<Node, SpanningTreeMessage> neighborBuildMessagesToSend = neighbors.keySet()
+                    .stream()
+                    .filter(node -> node.getId() != parentId)
+                    .collect(Collectors.toMap(
+                            Function.identity(),
+                            neighbor -> new SpanningTreeMessage(this, neighbor, UUID.randomUUID(), SpanningTreeMessageType.BUILD))
+                    );
+
+            IntStream.range(0, SpanningTreeProtocol.NUMBER_OF_TRIES)
+                    .forEach(i -> neighborBuildMessagesToSend.forEach((destination, messageForDestination) -> writer.writeMessage(messageForDestination)));
+
+
+            // todo: probably need to rewrite this while such that you only receive messages and look at the type
+            List<SpanningTreeMessage> responses = new ArrayList<>();
+            while (seenUuids.size() < neighbors.size()) {
+                SpanningTreeMessage prospectiveMessage = reader.readMessage();
+                if (prospectiveMessage.getType() == SpanningTreeMessageType.RESULT && !seenUuids.contains(prospectiveMessage.getMessageUuid())) {
+                    seenUuids.add(prospectiveMessage.getMessageUuid());
+                    responses.add(prospectiveMessage);
+                }
+            }
+
+            List<Integer> reversedTopologicalSort = new ArrayList<>(responses.get(0).getReversedTopologicalSort());
+            reversedTopologicalSort.add(this.id);
+
+            List<Integer> reversedParent = new ArrayList<>(responses.get(0).getReversedParent());
+            reversedParent.add(parentId);
+
+            SpanningTreeMessage resultForParent = new SpanningTreeMessage(
+                    this.id,
+                    parentId,
+                    possibleStartMessage.getDestinationAddress(),
+                    possibleStartMessage.getSourceAddress(),
+                    this.getPort(),
+                    possibleStartMessage.getSourcePort(),
+                    possibleStartMessage.getMessageUuid(),
+                    SpanningTreeMessageType.RESULT,
+                    reversedTopologicalSort,
+                    reversedParent
+            );
+            writer.writeMessage(resultForParent);
         }
-    }
-
-    private void writeResponse(DatagramPacket requestPacket) throws IOException {
-        byte[] responseBuffer = ("Hello world, " + Arrays.toString(requestPacket.getData())).getBytes();
-        DatagramPacket responsePacket = new DatagramPacket(responseBuffer,
-                responseBuffer.length,
-                requestPacket.getAddress(),
-                requestPacket.getPort()
-        );
-        socket.send(responsePacket);
     }
 }
