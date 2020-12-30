@@ -1,5 +1,7 @@
 package me.mircea;
 
+import me.mircea.shared.Node;
+
 import java.net.SocketException;
 import java.util.Map;
 import java.util.concurrent.Callable;

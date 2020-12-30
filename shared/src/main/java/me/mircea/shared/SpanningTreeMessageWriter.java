@@ -1,4 +1,4 @@
-package me.mircea;
+package me.mircea.shared;
 
 import lombok.RequiredArgsConstructor;
 

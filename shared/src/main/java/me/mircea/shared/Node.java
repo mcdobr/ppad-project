@@ -1,8 +1,8 @@
-package me.mircea;
+package me.mircea.shared;
 
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import me.mircea.SpanningTreeMessage.SpanningTreeMessageType;
+import me.mircea.shared.SpanningTreeMessage.SpanningTreeMessageType;
 
 import java.net.DatagramSocket;
 import java.net.SocketException;

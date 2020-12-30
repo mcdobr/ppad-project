@@ -1,4 +1,4 @@
-package me.mircea;
+package me.mircea.shared;
 
 import lombok.RequiredArgsConstructor;
 
@@ -8,7 +8,6 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Socket;
 
 import static java.util.Objects.nonNull;
 
