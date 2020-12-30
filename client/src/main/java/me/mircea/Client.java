@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 public class Client {
     public static void main(String[] args) throws UnknownHostException, SocketException {
+        DatagramSocket datagramSocket = new DatagramSocket();
         SpanningTreeMessage spanningTreeMessage = new SpanningTreeMessage(
                 SpanningTreeMessage.CLIENT_ID,
                 0,
@@ -30,7 +31,6 @@ public class Client {
                 Collections.emptyList()
         );
 
-        DatagramSocket datagramSocket = new DatagramSocket(16_000);
         SpanningTreeMessageWriter writer = new SpanningTreeMessageWriter(datagramSocket);
         writer.writeMessage(spanningTreeMessage);
 
