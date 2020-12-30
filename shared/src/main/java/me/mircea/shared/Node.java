@@ -74,7 +74,7 @@ public class Node implements Runnable {
 //        seenUuids.clear();
         SpanningTreeMessage message = reader.readMessage();
 
-        if (seenUuids.contains(message.getMessageUuid())) {
+        if (!seenUuids.contains(message.getMessageUuid())) {
             seenUuids.add(message.getMessageUuid());
 
             if (message.getType() == SpanningTreeMessageType.BUILD) {

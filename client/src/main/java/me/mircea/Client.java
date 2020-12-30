@@ -23,7 +23,7 @@ public class Client {
                 0,
                 InetAddress.getByName("127.0.0.1"),
                 InetAddress.getByName("127.0.0.1"),
-                9_000,
+                datagramSocket.getLocalPort(),
                 16_000,
                 UUID.randomUUID(),
                 SpanningTreeMessageType.BUILD,
