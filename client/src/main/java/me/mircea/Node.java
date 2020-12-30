@@ -16,6 +16,9 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static java.util.Objects.isNull;
 
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -28,6 +31,10 @@ public class Node implements Runnable {
     private final Set<UUID> seenUuids;
     private final SpanningTreeMessageReader reader;
     private final SpanningTreeMessageWriter writer;
+
+
+    private final List<SpanningTreeMessage> responses = new ArrayList<>();
+    private Integer parentId;
 
     public Node(int id, int port) throws SocketException {
         this.id = id;
@@ -62,53 +69,58 @@ public class Node implements Runnable {
     }
 
     private void buildSpanningTree() {
-        seenUuids.clear();
-        SpanningTreeMessage possibleStartMessage = reader.readMessage();
-        if (possibleStartMessage.getType() == SpanningTreeMessageType.BUILD) {
-            seenUuids.add(possibleStartMessage.getMessageUuid());
-            int parentId = possibleStartMessage.getSourceId();
+//        seenUuids.clear();
+        SpanningTreeMessage message = reader.readMessage();
 
-            Map<Node, SpanningTreeMessage> neighborBuildMessagesToSend = neighbors.keySet()
-                    .stream()
-                    .filter(node -> node.getId() != parentId)
-                    .collect(Collectors.toMap(
-                            Function.identity(),
-                            neighbor -> new SpanningTreeMessage(this, neighbor, UUID.randomUUID(), SpanningTreeMessageType.BUILD))
+        if (seenUuids.contains(message.getMessageUuid())) {
+            seenUuids.add(message.getMessageUuid());
+
+            if (message.getType() == SpanningTreeMessageType.BUILD) {
+                if (isNull(parentId)) {
+                    parentId = message.getSourceId();
+                    Map<Node, SpanningTreeMessage> neighborBuildMessagesToSend = neighbors.keySet()
+                            .stream()
+                            .filter(node -> node.getId() != parentId)
+                            .collect(Collectors.toMap(
+                                    Function.identity(),
+                                    neighbor -> new SpanningTreeMessage(this, neighbor, UUID.randomUUID(), SpanningTreeMessageType.BUILD))
+                            );
+
+                    IntStream.range(0, SpanningTreeProtocol.NUMBER_OF_TRIES)
+                            .forEach(i -> neighborBuildMessagesToSend.forEach((destination, messageForDestination) -> writer.writeMessage(messageForDestination)));
+                }
+            } else {
+                responses.add(message);
+                if (seenUuids.size() >= neighbors.size()) {
+                    List<Integer> reversedTopologicalSort = Stream.concat(
+                            responses.stream()
+                                    .map(SpanningTreeMessage::getReversedTopologicalSort)
+                                    .flatMap(List::stream),
+                            Stream.of(this.id)
+                    ).collect(Collectors.toList());
+
+                    List<Integer> reversedParent = Stream.concat(
+                            responses.stream()
+                                    .map(SpanningTreeMessage::getReversedParent)
+                                    .flatMap(List::stream),
+                            Stream.of(parentId)
+                    ).collect(Collectors.toList());
+
+                    SpanningTreeMessage resultForParent = new SpanningTreeMessage(
+                            this.id,
+                            parentId,
+                            message.getDestinationAddress(),
+                            message.getSourceAddress(),
+                            this.getPort(),
+                            message.getSourcePort(),
+                            message.getMessageUuid(),
+                            SpanningTreeMessageType.RESULT,
+                            reversedTopologicalSort,
+                            reversedParent
                     );
-
-            IntStream.range(0, SpanningTreeProtocol.NUMBER_OF_TRIES)
-                    .forEach(i -> neighborBuildMessagesToSend.forEach((destination, messageForDestination) -> writer.writeMessage(messageForDestination)));
-
-
-            // todo: probably need to rewrite this while such that you only receive messages and look at the type
-            List<SpanningTreeMessage> responses = new ArrayList<>();
-            while (seenUuids.size() < neighbors.size()) {
-                SpanningTreeMessage prospectiveMessage = reader.readMessage();
-                if (prospectiveMessage.getType() == SpanningTreeMessageType.RESULT && !seenUuids.contains(prospectiveMessage.getMessageUuid())) {
-                    seenUuids.add(prospectiveMessage.getMessageUuid());
-                    responses.add(prospectiveMessage);
+                    writer.writeMessage(resultForParent);
                 }
             }
-
-            List<Integer> reversedTopologicalSort = new ArrayList<>(responses.get(0).getReversedTopologicalSort());
-            reversedTopologicalSort.add(this.id);
-
-            List<Integer> reversedParent = new ArrayList<>(responses.get(0).getReversedParent());
-            reversedParent.add(parentId);
-
-            SpanningTreeMessage resultForParent = new SpanningTreeMessage(
-                    this.id,
-                    parentId,
-                    possibleStartMessage.getDestinationAddress(),
-                    possibleStartMessage.getSourceAddress(),
-                    this.getPort(),
-                    possibleStartMessage.getSourcePort(),
-                    possibleStartMessage.getMessageUuid(),
-                    SpanningTreeMessageType.RESULT,
-                    reversedTopologicalSort,
-                    reversedParent
-            );
-            writer.writeMessage(resultForParent);
         }
     }
 }
