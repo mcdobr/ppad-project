@@ -31,7 +31,7 @@ public class SpanningTreeMessageWriter {
             return new DatagramPacket(responseBuffer,
                     responseBuffer.length,
                     message.getDestinationAddress(),
-                    message.getDestinationPort()
+                    message.getDestinationListeningPort()
             );
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not serialize message...", e);

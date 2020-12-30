@@ -114,7 +114,7 @@ public class Node implements Runnable {
                             message.getDestinationAddress(),
                             message.getSourceAddress(),
                             this.getPort(),
-                            message.getSourcePort(),
+                            message.getSourceListeningPort(),
                             message.getMessageUuid(),
                             SpanningTreeMessageType.RESULT,
                             reversedTopologicalSort,

@@ -27,8 +27,8 @@ public class SpanningTreeMessage implements Serializable {
     private final int destinationId;
     private final InetAddress sourceAddress;
     private final InetAddress destinationAddress;
-    private final int sourcePort;
-    private final int destinationPort;
+    private final int sourceListeningPort;
+    private final int destinationListeningPort;
     private final UUID messageUuid;
     private final SpanningTreeMessageType type;
     private final List<Integer> reversedTopologicalSort;
