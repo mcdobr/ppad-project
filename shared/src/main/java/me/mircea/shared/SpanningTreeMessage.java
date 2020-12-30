@@ -13,7 +13,7 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 public class SpanningTreeMessage implements Serializable {
-    private static final int CLIENT_ID = -1;
+    public static final int CLIENT_ID = -1;
     private static final InetAddress ADDRESS;
     static {
         try {

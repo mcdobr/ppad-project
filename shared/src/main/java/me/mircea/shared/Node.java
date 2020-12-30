@@ -2,6 +2,7 @@ package me.mircea.shared;
 
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import me.mircea.shared.SpanningTreeMessage.SpanningTreeMessageType;
 
 import java.net.DatagramSocket;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 
+@Slf4j
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Node implements Runnable {
@@ -118,6 +120,7 @@ public class Node implements Runnable {
                             reversedTopologicalSort,
                             reversedParent
                     );
+                    log.debug("{} sending message to {}", this.id, parentId);
                     writer.writeMessage(resultForParent);
                 }
             }

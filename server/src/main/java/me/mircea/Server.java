@@ -12,7 +12,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Runner {
+public class Server {
     public static void main(String[] args) throws InterruptedException {
         final int startPort = 16_000;
         final int numberOfNodes = 8;
@@ -37,7 +37,7 @@ public class Runner {
         addUndirectedEdgeWithLatency(nodeMap, 6, 7, ThreadLocalRandom.current().nextInt());
 
         ExecutorService executorService = Executors.newFixedThreadPool(4);
-        executorService.invokeAll(nodeMap.values().stream().map(Runner::toCallable).collect(Collectors.toList()));
+        executorService.invokeAll(nodeMap.values().stream().map(Server::toCallable).collect(Collectors.toList()));
     }
 
     private static void addUndirectedEdgeWithLatency(Map<Integer, Node> nodeMap, int u, int v, int latency) {
