@@ -1,22 +1,33 @@
 package me.mircea.shared;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.nonNull;
 
 @RequiredArgsConstructor
+@Slf4j
 public class SpanningTreeMessageWriter {
     private final DatagramSocket socket;
+    private final int numberOfTries;
 
     public void writeMessage(SpanningTreeMessage message) {
-        DatagramPacket packet = serializeMessage(message);
-        sendUdpPacket(packet);
+        IntStream.range(0, numberOfTries).forEach(index -> {
+            log.debug("Sending message from {} to {}: {}",
+                    message.getSourceId(),
+                    message.getDestinationId(),
+                    message.getType()
+            );
+            DatagramPacket packet = serializeMessage(message);
+            sendUdpPacket(packet);
+        });
     }
 
     private DatagramPacket serializeMessage(SpanningTreeMessage message) {
@@ -41,17 +52,17 @@ public class SpanningTreeMessageWriter {
                     outputStream.close();
                 }
             } catch (IOException ioException) {
-                System.err.println("Could not close input stream...");
+                log.error("Could not close input stream...");
             }
         }
     }
 
     private void sendUdpPacket(DatagramPacket responsePacket) {
+        log.debug("Trying to write UDP packet to {}:{}", responsePacket.getAddress(), responsePacket.getPort());
         try {
             socket.send(responsePacket);
         } catch (IOException e) {
-            System.err.println("Could not write");
-            e.printStackTrace();
+            log.warn("Could not write UDP packet to {}:{}", responsePacket.getAddress(), responsePacket.getPort());
         }
     }
 }

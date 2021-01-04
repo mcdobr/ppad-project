@@ -31,7 +31,7 @@ public class Client {
                 Collections.emptyList()
         );
 
-        SpanningTreeMessageWriter writer = new SpanningTreeMessageWriter(datagramSocket);
+        SpanningTreeMessageWriter writer = new SpanningTreeMessageWriter(datagramSocket, 1);
         writer.writeMessage(spanningTreeMessage);
 
         SpanningTreeMessageReader reader = new SpanningTreeMessageReader(datagramSocket);

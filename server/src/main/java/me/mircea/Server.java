@@ -36,7 +36,7 @@ public class Server {
         addUndirectedEdgeWithLatency(nodeMap, 5, 6, ThreadLocalRandom.current().nextInt());
         addUndirectedEdgeWithLatency(nodeMap, 6, 7, ThreadLocalRandom.current().nextInt());
 
-        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        ExecutorService executorService = Executors.newFixedThreadPool(16);
         executorService.invokeAll(nodeMap.values().stream().map(Server::toCallable).collect(Collectors.toList()));
     }
 
