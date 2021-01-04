@@ -36,7 +36,19 @@ public class Server {
         addUndirectedEdgeWithLatency(nodeMap, 5, 6, ThreadLocalRandom.current().nextInt());
         addUndirectedEdgeWithLatency(nodeMap, 6, 7, ThreadLocalRandom.current().nextInt());
 
-        ExecutorService executorService = Executors.newFixedThreadPool(16);
+        /**
+         * @implNote Since I am using threads to showcase that this is possible over UDP, I am basically simulating
+         * processes competing for CPU time. Since the executor will start a task only when another task was completed,
+         * running with less threads than the number of nodes might be ok, but it also might cause starvation because
+         * the tasks currently running could be waiting for their children's results, but those children tasks do not
+         * get CPU time.
+         *
+         * @implNote Without doing a formal proof, for any G = (V, E) the number of minimum threads you would need is
+         * *PROBABLY* O(diameter of G) since the worst case is that you start from one endpoint of the diameter and have
+         * to wait for all the children to finish (including the one that is a diameter apart from it).
+         *
+         */
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfNodes);
         executorService.invokeAll(nodeMap.values().stream().map(Server::toCallable).collect(Collectors.toList()));
     }
 
