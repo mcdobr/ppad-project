@@ -46,7 +46,7 @@ public class Client {
         );
 
         System.out.println("Parents: ");
-        List<Integer> parents = new ArrayList<>(response.getReversedTopologicalSort());
+        List<Integer> parents = new ArrayList<>(response.getReversedParent());
         Collections.reverse(parents);
         System.out.println(parents.stream()
                 .map(String::valueOf)
