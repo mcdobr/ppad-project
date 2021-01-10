@@ -24,7 +24,7 @@ import static me.mircea.shared.SpanningTreeMessage.CLIENT_ID;
 @ToString(onlyExplicitlyIncluded = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Node implements Runnable {
-
+    @ToString.Include
     @EqualsAndHashCode.Include
     private final int id;
 
@@ -34,6 +34,8 @@ public class Node implements Runnable {
     private final SpanningTreeMessageWriter writer;
     private final List<SpanningTreeMessage> messagesReceived = new ArrayList<>();
 
+    private UUID session;
+    @ToString.Include
     private Integer parentId;
 
     public Node(int id, int port) throws SocketException {
@@ -59,20 +61,30 @@ public class Node implements Runnable {
     @Override
     public void run() {
         try {
-            while (!hasTalkedToAllNeighbors()) {
-                SpanningTreeMessage message = reader.readMessage();
-                handleMessage(message);
-            }
-            SpanningTreeMessage messageFromParent = messagesReceived.stream()
-                    .filter(msg -> msg.getSourceId() == parentId)
-                    .findAny()
-                    .orElseThrow();
-            reportToParent(messageFromParent);
+//            while (true) {
+                buildSpanningTree();
+
+//                Thread.sleep(500);
+//                messagesReceived.clear();
+//                parentId = null;
+//            }
         } catch (Exception e) {
             log.error("Exception occurred: ", e);
         } finally {
             socket.close();
         }
+    }
+
+    private void buildSpanningTree() {
+        while (!hasTalkedToAllNeighbors()) {
+            SpanningTreeMessage message = reader.readMessage();
+            handleMessage(message);
+        }
+        SpanningTreeMessage messageFromParent = messagesReceived.stream()
+                .filter(msg -> msg.getSourceId() == parentId)
+                .findAny()
+                .orElseThrow();
+        reportToParent(messageFromParent);
     }
 
     private void handleMessage(SpanningTreeMessage message) {

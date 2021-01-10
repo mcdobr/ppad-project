@@ -12,29 +12,31 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static me.mircea.shared.ClusterConfig.LATENCY_UPPER_BOUND_IN_MS;
+import static me.mircea.shared.ClusterConfig.NUMBER_OF_NODES;
+import static me.mircea.shared.ClusterConfig.START_PORT;
+
+
 public class Server {
     public static void main(String[] args) throws InterruptedException {
-        final int startPort = 16_000;
-        final int numberOfNodes = 8;
-
-        Map<Integer, Node> nodeMap = IntStream.range(0, numberOfNodes)
+        Map<Integer, Node> nodeMap = IntStream.range(0, NUMBER_OF_NODES)
                 .mapToObj(id -> {
                     try {
-                        return new Node(id, startPort + id);
+                        return new Node(id, START_PORT + id);
                     } catch (SocketException e) {
                         throw new IllegalStateException("Could not bind to UDP id " + id, e);
                     }
                 })
                 .collect(Collectors.toMap(Node::getId, Function.identity()));
 
-        addUndirectedEdgeWithLatency(nodeMap, 0, 1, ThreadLocalRandom.current().nextInt());
-        addUndirectedEdgeWithLatency(nodeMap, 0, 2, ThreadLocalRandom.current().nextInt());
-        addUndirectedEdgeWithLatency(nodeMap, 1, 3, ThreadLocalRandom.current().nextInt());
-        addUndirectedEdgeWithLatency(nodeMap, 1, 4, ThreadLocalRandom.current().nextInt());
-        addUndirectedEdgeWithLatency(nodeMap, 2, 4, ThreadLocalRandom.current().nextInt());
-        addUndirectedEdgeWithLatency(nodeMap, 2, 5, ThreadLocalRandom.current().nextInt());
-        addUndirectedEdgeWithLatency(nodeMap, 5, 6, ThreadLocalRandom.current().nextInt());
-        addUndirectedEdgeWithLatency(nodeMap, 6, 7, ThreadLocalRandom.current().nextInt());
+        addUndirectedEdgeWithLatency(nodeMap, 0, 1, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
+        addUndirectedEdgeWithLatency(nodeMap, 0, 2, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
+        addUndirectedEdgeWithLatency(nodeMap, 1, 3, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
+        addUndirectedEdgeWithLatency(nodeMap, 1, 4, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
+        addUndirectedEdgeWithLatency(nodeMap, 2, 4, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
+        addUndirectedEdgeWithLatency(nodeMap, 2, 5, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
+        addUndirectedEdgeWithLatency(nodeMap, 5, 6, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
+        addUndirectedEdgeWithLatency(nodeMap, 6, 7, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
 
         /**
          * @implNote Since I am using threads to showcase that this is possible over UDP, I am basically simulating
@@ -48,7 +50,7 @@ public class Server {
          * to wait for all the children to finish (including the one that is a diameter apart from it).
          *
          */
-        ExecutorService executorService = Executors.newFixedThreadPool(numberOfNodes);
+        ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_NODES);
         executorService.invokeAll(nodeMap.values().stream().map(Server::toCallable).collect(Collectors.toList()));
     }
 

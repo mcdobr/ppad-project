@@ -13,18 +13,38 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static me.mircea.shared.ClusterConfig.NUMBER_OF_NODES;
+import static me.mircea.shared.ClusterConfig.START_PORT;
 
 public class Client {
-    public static void main(String[] args) throws UnknownHostException, SocketException {
-        DatagramSocket datagramSocket = new DatagramSocket();
+    public static void main(String[] args) throws SocketException {
+        try (DatagramSocket datagramSocket = new DatagramSocket()) {
+            int numberOfRuns = 1;
+            IntStream.range(0, numberOfRuns)
+                    .forEach(runNumber -> {
+                        int destinationId = ThreadLocalRandom.current().nextInt(NUMBER_OF_NODES);
+                        System.out.println("Starting run by setting root to be " + destinationId + "...");
+                        try {
+                            askForSpanningTree(datagramSocket, destinationId);
+                        } catch (UnknownHostException e) {
+                            System.err.println("Could not resolve host...");
+                        }
+                    });
+        }
+    }
+
+    private static void askForSpanningTree(DatagramSocket datagramSocket, int destinationId) throws UnknownHostException {
         SpanningTreeMessage spanningTreeMessage = new SpanningTreeMessage(
                 SpanningTreeMessage.CLIENT_ID,
-                0,
+                destinationId,
                 InetAddress.getByName("127.0.0.1"),
                 InetAddress.getByName("127.0.0.1"),
                 datagramSocket.getLocalPort(),
-                16_000,
+                START_PORT + destinationId,
                 UUID.randomUUID(),
                 SpanningTreeMessageType.BUILD,
                 Collections.emptyList(),
