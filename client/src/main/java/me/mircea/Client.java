@@ -26,7 +26,8 @@ public class Client {
             int numberOfRuns = 1;
             IntStream.range(0, numberOfRuns)
                     .forEach(runNumber -> {
-                        int destinationId = ThreadLocalRandom.current().nextInt(NUMBER_OF_NODES);
+//                        int destinationId = ThreadLocalRandom.current().nextInt(NUMBER_OF_NODES);
+                        int destinationId = 0;
                         System.out.println("Starting run by setting root to be " + destinationId + "...");
                         try {
                             askForSpanningTree(datagramSocket, destinationId);
@@ -48,7 +49,8 @@ public class Client {
                 UUID.randomUUID(),
                 SpanningTreeMessageType.BUILD,
                 Collections.emptyList(),
-                Collections.emptyList()
+                Collections.emptyList(),
+                0
         );
 
         SpanningTreeMessageWriter writer = new SpanningTreeMessageWriter(datagramSocket, 1);

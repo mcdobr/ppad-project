@@ -62,7 +62,7 @@ public class Node implements Runnable {
     public void run() {
         try {
 //            while (true) {
-                buildSpanningTree();
+            buildSpanningTree();
 
 //                Thread.sleep(500);
 //                messagesReceived.clear();
@@ -127,7 +127,8 @@ public class Node implements Runnable {
                 message.getMessageUuid(),
                 SpanningTreeMessageType.ALREADY,
                 Collections.emptyList(),
-                Collections.emptyList()
+                Collections.emptyList(),
+                message.getSimulatedLatency()
         );
         log.debug("{} sending ALREADY message to {}", this.id, message.getSourceId());
         writer.writeMessage(alreadyMessage);
@@ -158,7 +159,8 @@ public class Node implements Runnable {
                 messageFromParent.getMessageUuid(),
                 SpanningTreeMessageType.RESULT,
                 reversedTopologicalSort,
-                reversedParent
+                reversedParent,
+                messageFromParent.getSimulatedLatency()
         );
         log.debug("{} sending message to {}", this.id, parentId);
         writer.writeMessage(resultForParent);
@@ -179,7 +181,8 @@ public class Node implements Runnable {
         return new SpanningTreeMessage(source,
                 destination,
                 UUID.randomUUID(),
-                SpanningTreeMessageType.BUILD
+                SpanningTreeMessageType.BUILD,
+                neighbors.get(destination)
         );
     }
 }

@@ -33,9 +33,21 @@ public class SpanningTreeMessage implements Serializable {
     private final SpanningTreeMessageType type;
     private final List<Integer> reversedTopologicalSort;
     private final List<Integer> reversedParent;
+    private final int simulatedLatency;
 
-    public SpanningTreeMessage(Node source, Node destination, UUID uuid, SpanningTreeMessageType type) {
-        this(source.getId(), destination.getId(), ADDRESS, ADDRESS, source.getPort(), destination.getPort(), uuid, type, new ArrayList<>(), new ArrayList<>());
+    public SpanningTreeMessage(Node source, Node destination, UUID uuid, SpanningTreeMessageType type, int simulatedLatency) {
+        this(source.getId(),
+                destination.getId(),
+                ADDRESS,
+                ADDRESS,
+                source.getPort(),
+                destination.getPort(),
+                uuid,
+                type,
+                new ArrayList<>(),
+                new ArrayList<>(),
+                simulatedLatency
+        );
     }
 
     public enum SpanningTreeMessageType {

@@ -26,6 +26,7 @@ public class SpanningTreeMessageWriter {
                     message.getType()
             );
             DatagramPacket packet = serializeMessage(message);
+            simulateLatency(message.getSimulatedLatency());
             sendUdpPacket(packet);
         });
     }
@@ -63,6 +64,14 @@ public class SpanningTreeMessageWriter {
             socket.send(responsePacket);
         } catch (IOException e) {
             log.warn("Could not write UDP packet to {}:{}", responsePacket.getAddress(), responsePacket.getPort());
+        }
+    }
+
+    private void simulateLatency(int latency) {
+        try {
+            Thread.sleep(latency);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }
