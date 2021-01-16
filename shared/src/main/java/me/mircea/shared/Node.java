@@ -1,6 +1,7 @@
 package me.mircea.shared;
 
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import me.mircea.shared.SpanningTreeMessage.SpanningTreeMessageType;
@@ -23,13 +24,14 @@ import static me.mircea.shared.SpanningTreeMessage.CLIENT_ID;
 @Slf4j
 @ToString(onlyExplicitlyIncluded = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Getter
 public class Node implements Runnable {
     @ToString.Include
     @EqualsAndHashCode.Include
     private final int id;
 
     private final DatagramSocket socket;
-    private final Map<Node, Integer> neighbors;
+    private final Map<Integer, Integer> neighbors;
     private final SpanningTreeMessageReader reader;
     private final SpanningTreeMessageWriter writer;
     private final List<SpanningTreeMessage> messagesReceived = new ArrayList<>();
@@ -46,16 +48,8 @@ public class Node implements Runnable {
         this.writer = new SpanningTreeMessageWriter(this.socket, 1);
     }
 
-    public int getId() {
-        return this.id;
-    }
-
     public int getPort() {
         return socket.getLocalPort();
-    }
-
-    public void addNeighbor(Node other, int latency) {
-        neighbors.put(other, latency);
     }
 
     @Override
@@ -102,9 +96,9 @@ public class Node implements Runnable {
 
     private void askChildrenToBuildSubTree(SpanningTreeMessage messageFromParent) {
         parentId = messageFromParent.getSourceId();
-        Map<Node, SpanningTreeMessage> neighborBuildMessagesToSend = neighbors.keySet()
+        Map<Integer, SpanningTreeMessage> neighborBuildMessagesToSend = neighbors.keySet()
                 .stream()
-                .filter(node -> node.getId() != parentId)
+                .filter(nodeId -> nodeId != parentId)
                 .collect(Collectors.toMap(
                         Function.identity(),
                         neighbor -> createBuildMessage(this, neighbor)
@@ -177,12 +171,12 @@ public class Node implements Runnable {
         }
     }
 
-    private SpanningTreeMessage createBuildMessage(Node source, Node destination) {
+    private SpanningTreeMessage createBuildMessage(Node source, int destinationId) {
         return new SpanningTreeMessage(source,
-                destination,
+                destinationId,
                 UUID.randomUUID(),
                 SpanningTreeMessageType.BUILD,
-                neighbors.get(destination)
+                neighbors.get(destinationId)
         );
     }
 }

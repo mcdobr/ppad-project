@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static me.mircea.shared.ClusterConfig.START_PORT;
+
 @Getter
 @AllArgsConstructor
 public class SpanningTreeMessage implements Serializable {
@@ -35,13 +37,13 @@ public class SpanningTreeMessage implements Serializable {
     private final List<Integer> reversedParent;
     private final int simulatedLatency;
 
-    public SpanningTreeMessage(Node source, Node destination, UUID uuid, SpanningTreeMessageType type, int simulatedLatency) {
+    public SpanningTreeMessage(Node source, int destinationId, UUID uuid, SpanningTreeMessageType type, int simulatedLatency) {
         this(source.getId(),
-                destination.getId(),
+                destinationId,
                 ADDRESS,
                 ADDRESS,
                 source.getPort(),
-                destination.getPort(),
+                destinationId + START_PORT,
                 uuid,
                 type,
                 new ArrayList<>(),
@@ -53,6 +55,6 @@ public class SpanningTreeMessage implements Serializable {
     public enum SpanningTreeMessageType {
         BUILD,
         RESULT,
-        ALREADY // todo: need to check for this to have the number of messages from children not be < number of children
+        ALREADY
     }
 }
