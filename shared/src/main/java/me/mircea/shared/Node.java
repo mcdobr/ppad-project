@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
-import static me.mircea.shared.SpanningTreeMessage.CLIENT_ID;
 
 @Slf4j
 @ToString(onlyExplicitlyIncluded = true)
@@ -70,7 +69,7 @@ public class Node implements Runnable {
     }
 
     private void buildSpanningTree() {
-        while (!hasTalkedToAllNeighbors()) {
+        while (!hasTalkedToAllKnownNeighbors()) {
             SpanningTreeMessage message = reader.readMessage();
             handleMessage(message);
         }
@@ -160,15 +159,15 @@ public class Node implements Runnable {
         writer.writeMessage(resultForParent);
     }
 
-    private boolean hasTalkedToAllNeighbors() {
+    private boolean hasTalkedToAllKnownNeighbors() {
         if (isNull(parentId))
             return false;
-        long numberOfMessagesReceived = messagesReceived.stream().map(SpanningTreeMessage::getSourceId).distinct().count();
-        if (parentId == CLIENT_ID) {
-            return numberOfMessagesReceived >= neighbors.size() + 1;
-        } else {
-            return numberOfMessagesReceived >= neighbors.size();
-        }
+        long numberOfMessagesReceivedFromKnownNeighbors = messagesReceived.stream()
+                .map(SpanningTreeMessage::getSourceId)
+                .distinct()
+                .filter(neighbors::containsKey)
+                .count();
+        return numberOfMessagesReceivedFromKnownNeighbors >= neighbors.size();
     }
 
     private SpanningTreeMessage createBuildMessage(Node source, int destinationId) {

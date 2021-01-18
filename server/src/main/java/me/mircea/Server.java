@@ -6,7 +6,6 @@ import java.net.SocketException;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static me.mircea.shared.ClusterConfig.LATENCY_UPPER_BOUND_IN_MS;
-import static me.mircea.shared.ClusterConfig.NUMBER_OF_NODES;
 import static me.mircea.shared.ClusterConfig.START_PORT;
 
 /**
@@ -20,13 +19,18 @@ public class Server {
         int id = Integer.parseInt(args[0]);
         Node node = new Node(id, START_PORT + id);
 
-        for (int neighbor = 0; neighbor < NUMBER_OF_NODES; ++neighbor) {
-            if (neighbor != id) {
-                node.getNeighbors().put(neighbor, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
-            }
+//        for (int neighbor = 0; neighbor < NUMBER_OF_NODES; ++neighbor) {
+//            if (neighbor != id) {
+//                node.getNeighbors().put(neighbor, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
+//            }
+//        }
+
+        for (int i = 1; i < args.length; ++i) {
+            node.getNeighbors().put(Integer.parseInt(args[i]), ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
         }
 
         node.run();
+        System.out.println("Node " + id + "exited...");
 
 //        addUndirectedEdgeWithLatency(nodeMap, 0, 1, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
 //        addUndirectedEdgeWithLatency(nodeMap, 0, 2, ThreadLocalRandom.current().nextInt(LATENCY_UPPER_BOUND_IN_MS));
