@@ -54,13 +54,7 @@ public class Node implements Runnable {
     @Override
     public void run() {
         try {
-//            while (true) {
             buildSpanningTree();
-
-//                Thread.sleep(500);
-//                messagesReceived.clear();
-//                parentId = null;
-//            }
         } catch (Exception e) {
             log.error("Exception occurred: ", e);
         } finally {
